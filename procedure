@@ -1,0 +1,103 @@
+
+
+DROP PROCEDURE IF EXISTS cost_setter $$
+CREATE PROCEDURE cost_setter()
+
+BEGIN
+
+DECLARE total_sum  INTEGER;
+DECLARE order_count INTEGER;
+DECLARE itr INTEGER;
+DECLARE discount INTEGER;
+DECLARE pay INTEGER; 
+DECLARE discount_amout INTEGER;
+
+set order_count = (select count(*) from orders);
+set itr=1;
+
+while(itr <= order_count) do
+
+select sum(carts.product_quantity * variants.price) into total_sum from carts,variants where carts.color_id = variants.id and carts.user_id = itr;
+
+update orders set final_cost = total_sum where id = itr;
+
+ 
+
+
+set discount = (select discount_coupon from payment where id=itr);
+
+set discount_amout = ((discount/100)*total_sum);
+
+
+select total_sum,discount_amout ;
+set pay=(total_sum - discount_amout);
+select pay,itr;
+update payment set checkout_amount = pay where order_id =  itr   ;
+
+
+set itr=itr+1; 
+END WHILE ;
+
+END$$
+
+
+
+DROP PROCEDURE IF EXISTS cost_setter $$
+CREATE PROCEDURE cost_setter()
+
+BEGIN
+
+DECLARE total_sum  INTEGER;
+DECLARE order_count INTEGER;
+DECLARE itr INTEGER;
+DECLARE discount INTEGER;
+DECLARE pay INTEGER; 
+DECLARE discount_amout INTEGER;
+
+set order_count = (select count(*) from orders);
+set itr=1;
+
+while(itr <= order_count) do
+
+select sum(carts.product_quantity * variants.price) into total_sum from carts,variants where carts.color_id = variants.id and carts.user_id = itr;
+
+update orders set final_cost = total_sum where id = itr;
+
+ 
+
+set discount = (select discount_coupon from payment where id=itr);
+
+set discount_amout = ((discount/100)*total_sum);
+
+
+select total_sum,discount_amout ;
+set pay=(total_sum - discount_amout);
+select pay,itr;
+update payment set checkout_amount = pay where order_id =  itr   ;
+
+
+set itr=itr+1; 
+END WHILE ;
+
+END$$
+
+
+
+
+
+
+
+create view order_detail as 
+select orders.id,orders.final_cost,payment.checkout_amount,payment.payment_type,payment.payment_status from payment left join orders on orders.id=payment.order_id;
+
+
+DELIMITER $$
+
+
+create view monthly_report as 
+select orders.id,orders.final_cost,payment.checkout_amount,users.user_name,users.email from payment,orders,users 
+WHERE (payment.payment_id BETWEEN '2017-10-15 ' AND '2017-11-15');
+
+
+DELIMITER $$
+
