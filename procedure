@@ -1,3 +1,80 @@
+CREATE DEFINER=`root`@`localhost` PROCEDURE `payment_call`(IN ids int ,IN orderId int,IN paymentType varchar(20),IN discountCoupon int,IN paymentDate date, IN paymentStatus varchar(20),IN Created date)
+BEGIN  
+
+DECLARE userId INTEGER;
+DECLARE orderIds INTEGER;
+DECLARE colorId INTEGER;
+DECLARE productId INTEGER;
+DECLARE quant INTEGER;
+
+DECLARE roll_back INTEGER DEFAULT 0;
+DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET roll_back = 1;
+
+start transaction;
+
+insert into payment(id,order_id,payment_type,discount_coupon,payment_date,payment_status,created) values(ids,orderId,paymentType,discountCoupon,paymentDate,paymentStatus,Created);
+
+call cost_setter();
+
+select carts.user_id,carts.order_id,carts.color_id,carts.product_id,carts.product_quantity into 
+userId,orderIds,colorId,productId,quant from carts where order_id=orderId;
+
+delete from carts where carts.order_id = orderId;
+ 
+insert into order_history (user_id,order_id,color_id,product_id,product_quantity) values 
+(userId,orderIds,colorId,productId,quant);
+
+if roll_back then
+    select(roll_back);
+    rollback;
+   
+else
+
+    select(roll_back);
+    commit;
+end if;
+
+END ;;
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 DROP PROCEDURE IF EXISTS cost_setter $$
