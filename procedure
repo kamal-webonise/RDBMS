@@ -45,13 +45,13 @@ set pay = (total_sum - discount_amount);
 
 select discount_amount,pay,total_sum;
 
-insert into payment(id,payment_type,discount_coupon,user_id,payment_date,checkout_amount,order_id,payment_status,created) values
-(ids,paymentType,discount,userId,curDate(),pay,ids,"paid",curDate());
-
 insert into orders
 (id,order_date,shipping_date,order_status,final_cost,user_id,created)
 values
 (ids,curDate(),curDate(),"placed",total_sum,userId,curDate());
+
+insert into payment(id,payment_type,discount_coupon,user_id,payment_date,checkout_amount,order_id,payment_status,created) values
+(ids,paymentType,discount,userId,curDate(),pay,ids,"paid",curDate());
 
 
 OPEN shift;
