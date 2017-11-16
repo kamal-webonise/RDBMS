@@ -71,7 +71,7 @@ if quant_check<0 then
 set roll_back =1;
 end if;
 
-update stock set  stock = quant_check where color_id=colorIds;
+update variants set  stock = quant_check where color_id=colorIds;
 	
 END LOOP;
 CLOSE shift;
