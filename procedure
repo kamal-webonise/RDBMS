@@ -1,3 +1,153 @@
+
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS payment_call $$
+
+CREATE PROCEDURE payment_call(IN ids int, IN paymentType varchar(20),IN userId int)
+
+BEGIN  
+
+DECLARE total_sum  INTEGER;
+DECLARE pay  INTEGER;
+DECLARE discount_amount  INTEGER;
+DECLARE discount  INTEGER;
+
+DECLARE userIds INTEGER;
+DECLARE colorIds INTEGER;
+DECLARE productIds INTEGER;
+DECLARE quant INTEGER;
+
+DECLARE roll_back INTEGER DEFAULT 0;
+DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET roll_back = 1;
+
+DECLARE done INTEGER default 0;
+DECLARE shift CURSOR FOR SELECT user_id,color_id,product_id,product_quantity FROM carts where user_id=ids;
+
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+
+
+start transaction;
+
+
+select sum(carts.product_quantity * variants.price) into total_sum from carts,variants where carts.color_id = variants.id and carts.user_id = userId;
+
+
+
+set discount = 10;
+
+set discount_amount = ((discount/100)*total_sum);
+
+
+
+set pay = (total_sum - discount_amount);
+
+select discount_amount,pay,total_sum;
+
+insert into payment(id,payment_type,discount_coupon,user_id,payment_date,checkout_amount,order_id,payment_status,created) values
+(ids,paymentType,discount,userId,curDate(),pay,ids,"paid",curDate());
+
+insert into orders
+(id,order_date,shipping_date,order_status,final_cost,user_id,created)
+values
+(ids,curDate(),curDate(),"placed",total_sum,userId,curDate());
+
+
+OPEN shift;
+read_loop: LOOP
+FETCH shift INTO userIds,colorIds, productIds,quant   ;
+
+IF done THEN
+     LEAVE read_loop;
+END IF;
+
+INSERT INTO order_history(user_id,color_id,product_id,product_quantity,created) VALUES (userIds,colorIds,productIds,quant,curDate());
+
+select stock into quant_check from variants where color_id=colorIds;
+set quant_check = (quant_check - quant);
+
+if quant_check<0 then
+set roll_back =1;
+end if;
+
+update stock set  stock = quant_check where color_id=colorIds;
+	
+END LOOP;
+CLOSE shift;
+delete from carts where user_id=userId;
+
+
+
+
+
+if roll_back then
+    select roll_back;
+    rollback;
+   
+else
+    select roll_back;	
+    commit;
+end if;
+
+END$$
+
+
+
+
+call payment_call(1,"COD",2)$$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `payment_call`(IN ids int ,IN orderId int,IN paymentType varchar(20),IN discountCoupon int,IN paymentDate date, IN paymentStatus varchar(20),IN Created date)
 BEGIN  
 
@@ -49,6 +199,57 @@ DELIMITER ;
 
 
 
+DROP PROCEDURE IF EXISTS payment_call1 $$
+
+CREATE PROCEDURE payment_call1(IN ids int, IN paymentType varchar(20), IN discountCoupon int,IN userId int)
+
+BEGIN  
+
+DECLARE total_sum  INTEGER;
+DECLARE pay  INTEGER;
+DECLARE discount_amount  INTEGER;
+DECLARE discount  INTEGER;
+
+DECLARE roll_back INTEGER DEFAULT 0;
+DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET roll_back = 1;
+
+start transaction;
+
+
+select sum(carts.product_quantity * variants.price) into total_sum from carts,variants where carts.color_id = variants.id and carts.user_id = userId;
+
+
+
+
+
+set discount = 10;
+
+set discount_amount = ((discount/100)*total_sum);
+
+
+
+set pay = (total_sum - discount_amount);
+
+select discount_amount,pay;
+
+insert into payment(id,payment_type,discount_coupon,user_id,payment_date,checkout_amount,order_id,payment_status,created) values(ids,paymentType,discountCoupon,userId,curDate(),pay,ids,"paid",curDate());
+
+if roll_back then
+    select roll_back;
+    rollback;
+   
+else
+    select roll_back;	
+    commit;
+end if;
+
+END$$
+
+
+
+delete from payment$$
+
+call payment_call1(1,"COD",10,2)$$
 
 
 
